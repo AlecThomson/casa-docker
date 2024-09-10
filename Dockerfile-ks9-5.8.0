@@ -1,0 +1,55 @@
+FROM kernsuite/base:9
+ENV DEBIAN_FRONTEND=noninteractive
+RUN docker-apt-install wget
+WORKDIR /casa
+RUN wget --content-disposition https://casa.nrao.edu/download/distro/casa/release/el7/casa-release-5.8.0-109.el7.tar.gz
+# Install these now for caching
+# Got list from https://github.com/idia-astro/idia-container-casa-stable.git
+RUN docker-apt-install tzdata \
+    libxrandr-dev \
+    libxcursor-dev \
+    libxinerama-dev \
+    libfontconfig1-dev \
+    fontconfig \
+    libxft-dev \
+    libgl1 \
+    libsm-dev \
+    libx11-dev \
+    libxext-dev \
+    libxi-dev \
+    libxrender-dev \
+    libxml2 libxslt1.1 \
+    libapparmor1 \
+    libtcl8.6 \
+    dbus \
+    dbus-x11 \
+    libtk8.6 \
+    tk8.6-blt2.5 \
+    blt \
+    python-tk \
+    ghostscript \
+    xvfb \
+    curl \
+    perl
+    
+    #apt-get install -y casacore-dev casacore-doc python-casacore python-pip 
+
+RUN tar -xvf casa-release-5.8.0-109.el7.tar.gz
+RUN rm -f casa-release-5.8.0-109.el7.tar.gz
+ENV PATH="/casa/casa-release-5.8.0-109.el7/bin:${PATH}"
+# Make CASA download its data
+ENV HOME=/casa
+RUN mkdir -p $HOME/.casa/data
+RUN casa --log2term -c "exit"
+# Now use config.py
+COPY config.py ./
+ENV CASASITECONFIG=/casa/config.py
+# Fix locale
+ENV LC_CTYPE=en_US.UTF-8
+ENV LC_ALL=en_US.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US.UTF-8
+RUN echo en_US UTF-8 >> /etc/locale.gen
+RUN docker-apt-install locales
+RUN locale-gen en_US.UTF-8
+ENTRYPOINT [ "casa" ]
